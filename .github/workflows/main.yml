@@ -1,0 +1,52 @@
+name: Facebook Survey Alert
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+jobs:
+  check-facebook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Betenbough Homes Facebook page
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: "6300063912"
+        run: |
+          PAGE_URL="https://www.facebook.com/betenboughhomes"
+
+          echo "Checking: $PAGE_URL"
+
+          RESPONSE=$(curl -L \
+            -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131 Safari/537.36" \
+            --max-time 30 \
+            -s "$PAGE_URL" || true)
+
+          echo "Facebook response length: ${#RESPONSE}"
+
+          if [ -z "$RESPONSE" ]; then
+            echo "Facebook returned no content."
+            exit 1
+          fi
+
+          echo "$RESPONSE" > facebook.html
+
+          if echo "$RESPONSE" | grep -Eiq \
+            "survey|questionnaire|participants|take part|research|study|feedback|respondents|poll"; then
+
+            MESSAGE="🚨 Possible survey post detected on Betenbough Homes Facebook page!
+
+Check the page immediately:
+https://www.facebook.com/betenboughhomes"
+
+            curl -s -X POST \
+              "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=${MESSAGE}"
+
+            echo "Telegram alert sent."
+          else
+            echo "No survey keywords detected."
+          fi
