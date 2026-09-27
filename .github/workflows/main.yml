@@ -1,13 +1,7 @@
-  name: Facebook Survey Alert Test
-
-on:
-  push:
-  workflow_dispatch:
+name: Test
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Test GitHub Actions
-        run: echo "GitHub Actions is working!"
+      - run: echo "GitHub Actions works"
